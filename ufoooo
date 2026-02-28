@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>UFO Jump: Face Edition</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0b0d17; font-family: sans-serif; }
+        canvas { display: block; margin: 0 auto; background: linear-gradient(#0b0d17, #1a1c2c); }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; }
+    </style>
+</head>
+<body>
+    <div id="ui">Punteggio: <span id="score">0</span></div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreElement = document.getElementById('score');
+
+canvas.width = window.innerWidth > 500 ? 500 : window.innerWidth;
+canvas.height = window.innerHeight;
+
+// --- CONFIGURAZIONE IMMAGINI ---
+const faceImg = new Image();
+// METTI QUI IL LINK ALLA TUA FOTO (ritagliata sul viso)
+faceImg.src = 'https://i.imgur.com'; 
+
+// --- VARIABILI DI GIOCO ---
+let score = 0;
+let gameActive = true;
+
+const player = {
+    x: canvas.width / 2,
+    y: canvas.height - 150,
+    width: 60,
+    height: 100,
+    speedY: 0,
+    gravity: 0.4,
+    jumpStrength: -12,
+    movingLeft: false,
+    movingRight: false
+};
+
+const ufos = [];
+function createUfo(y) {
+    ufos.push({
+        x: Math.random() * (canvas.width - 80),
+        y: y,
+        width: 80,
+        height: 30,
+        speedX: (Math.random() - 0.5) * 4
+    });
+}
+
+// Inizializza UFO
+for (let i = 0; i < 7; i++) {
+    createUfo(canvas.height - (i * 120));
+}
+
+// --- LOGICA ---
+function update() {
+    if (!gameActive) return;
+
+    // Movimento Giocatore
+    player.speedY += player.gravity;
+    player.y += player.speedY;
+
+    if (player.movingLeft) player.x -= 5;
+    if (player.movingRight) player.x += 5;
+
+    // Scroll della telecamera
+    if (player.y < canvas.height / 2) {
+        let diff = canvas.height / 2 - player.y;
+        player.y = canvas.height / 2;
+        score += Math.floor(diff / 10);
+        scoreElement.innerText = score;
+        ufos.forEach(ufo => {
+            ufo.y += diff;
+            if (ufo.y > canvas.height) {
+                ufo.y = 0;
+                ufo.x = Math.random() * (canvas.width - 80);
+            }
+        });
+    }
+
+    // Collisioni con UFO
+    ufos.forEach(ufo => {
+        ufo.x += ufo.speedX;
+        if (ufo.x < 0 || ufo.x > canvas.width - ufo.width) ufo.speedX *= -1;
+
+        if (player.speedY > 0 && 
+            player.x + player.width > ufo.x && 
+            player.x < ufo.x + ufo.width &&
+            player.y + player.height > ufo.y && 
+            player.y + player.height < ufo.y + ufo.height) {
+            player.speedY = player.jumpStrength;
+        }
+    });
+
+    // Game Over
+    if (player.y > canvas.height) {
+        gameActive = false;
+        alert("Game Over! Punteggio: " + score);
+        location.reload();
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Disegna UFO (Stile Alieno)
+    ufos.forEach(ufo => {
+        ctx.fillStyle = '#00ff88';
+        ctx.beginPath();
+        ctx.ellipse(ufo.x + ufo.width/2, ufo.y + ufo.height/2, ufo.width/2, ufo.height/2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.beginPath();
+        ctx.arc(ufo.x + ufo.width/2, ufo.y + 5, 15, 0, Math.PI, true);
+        ctx.fill();
+    });
+
+    // Disegna Personaggio (Vestito Divertente: Tutina Rosa)
+    // Corpo
+    ctx.fillStyle = '#ff69b4'; // Rosa shock
+    ctx.fillRect(player.x + 10, player.y + 40, 40, 50); 
+    // Braccia e gambe buffe
+    ctx.strokeStyle = '#ff69b4';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(player.x + 15, player.y + 90, 10, 10);
+    ctx.strokeRect(player.x + 35, player.y + 90, 10, 10);
+
+    // LA TUA FACCIA
+    ctx.drawImage(faceImg, player.x, player.y, 60, 60);
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+// --- CONTROLLI ---
+window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') player.movingLeft = true;
+    if (e.key === 'ArrowRight') player.movingRight = true;
+});
+window.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft') player.movingLeft = false;
+    if (e.key === 'ArrowRight') player.movingRight = false;
+});
+
+loop();
+</script>
+</body>
+</html>
