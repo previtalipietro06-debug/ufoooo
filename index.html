@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UFO Jump: GitHub Edition</title>
+    <title>UFO Jump: Local Photo Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background: #020205; font-family: 'Arial Black', sans-serif; }
         canvas { display: block; touch-action: none; cursor: pointer; }
@@ -13,7 +13,7 @@
 </head>
 <body>
     <div id="ui">PUNTI: <span id="score">0</span></div>
-    <div id="inst">Frecce o Click/Touch ai lati per saltare tra gli UFO</div>
+    <div id="inst">Frecce o Click/Touch ai lati per saltare</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -24,29 +24,17 @@ const scoreElement = document.getElementById('score');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// --- CONFIGURAZIONE GITHUB ---
-let githubPhotoUrl = 'https://github.com/previtalipietro06-debug/ufoooo/blob/main/fotoufo%20(1).png';
-
-
-// Funzione per convertire il link GitHub in link RAW (leggibile dal gioco)
-function getRawUrl(url) {
-    if (url.includes('github.com') && !url.includes('raw.githubusercontent.com')) {
-        return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
-    }
-    return url;
-}
-
+// --- RIFERIMENTO AL FILE LOCALE ---
 const faceImg = new Image();
-faceImg.crossOrigin = "anonymous"; // Necessario per evitare blocchi di sicurezza
-faceImg.src = getRawUrl(githubPhotoUrl);
+// Assicurati che il file si chiami esattamente così e sia nella stessa cartella dell'HTML
+faceImg.src = 'fotoufo.png'; 
 
-// Variabili di gioco
 let score = 0;
 let gameActive = true;
 let platforms = [];
 
 const player = {
-    x: 0, y: 0, w: 60, h: 90,
+    x: 0, y: 0, w: 60, h: 95,
     vy: 0, gravity: 0.4, jump: -14,
     vx: 0, speed: 8
 };
@@ -60,7 +48,7 @@ function initGame() {
     player.vx = 0;
     
     platforms = [];
-    // Base sicura
+    // Piattaforma di partenza sicura
     platforms.push({ x: canvas.width/2 - 60, y: canvas.height - 110, w: 120, h: 25 });
     
     for(let i=1; i<8; i++) {
@@ -132,6 +120,7 @@ function draw() {
     ctx.fillStyle = '#020205';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    // Disegna UFO
     platforms.forEach(p => {
         ctx.fillStyle = '#444';
         ctx.beginPath();
@@ -144,24 +133,30 @@ function draw() {
     });
 
     // VESTITO DIVERTENTE
-    // Mantello rosso
+    // Mantello rosso da supereroe
     ctx.fillStyle = '#ff0000';
-    ctx.fillRect(player.x + 5, player.y + 45, player.w - 10, 40);
-    // Tutina blu
+    ctx.fillRect(player.x + 5, player.y + 45, player.w - 10, 45);
+    // Tutina blu elettrico
     ctx.fillStyle = '#00aaff';
-    ctx.fillRect(player.x + 15, player.y + 40, 30, 45);
-    // Cintura oro
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(player.x + 15, player.y + 60, 30, 5);
+    ctx.fillRect(player.x + 15, player.y + 40, 30, 50);
+    // Stivali
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(player.x + 15, player.y + 85, 10, 10);
+    ctx.fillRect(player.x + 35, player.y + 85, 10, 10);
     
-    // TESTA
+    // DISEGNA LA TUA FACCIA
     if (faceImg.complete && faceImg.naturalWidth !== 0) {
+        // Disegna la foto centrata
         ctx.drawImage(faceImg, player.x, player.y, 60, 60);
     } else {
-        ctx.fillStyle = '#f1c40f'; // Giallo se l'immagine non carica
+        // Faccia gialla di emergenza se il file non viene trovato
+        ctx.fillStyle = '#f1c40f';
         ctx.beginPath();
-        ctx.arc(player.x + 30, player.y + 30, 25, 0, Math.PI * 2);
+        ctx.arc(player.x + 30, player.y + 30, 28, 0, Math.PI * 2);
         ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.fillRect(player.x + 18, player.y + 20, 6, 6);
+        ctx.fillRect(player.x + 36, player.y + 20, 6, 6);
     }
 }
 
@@ -171,15 +166,16 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Controlli
+// Controlli Tastiera
 window.onkeydown = (e) => {
     if(e.key === "ArrowLeft") player.vx = -player.speed;
     if(e.key === "ArrowRight") player.vx = player.speed;
 };
 window.onkeyup = (e) => player.vx = 0;
 
+// Controlli Touch/Mouse
 canvas.onmousedown = canvas.ontouchstart = (e) => {
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const x = e.touches ? e.touches.clientX : e.clientX;
     player.vx = (x < canvas.width / 2) ? -player.speed : player.speed;
 };
 canvas.onmouseup = canvas.ontouchend = () => player.vx = 0;
