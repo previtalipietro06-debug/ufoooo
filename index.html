@@ -3,24 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UFO Jump: Space XL - Alien Update</title>
+    <title>UFO Jump: Chrono Sprint</title>
     <style>
         body { margin: 0; overflow: hidden; background: #020205; font-family: 'Arial Black', sans-serif; }
         canvas { display: block; touch-action: none; cursor: pointer; }
         #ui { position: absolute; top: 20px; width: 100%; text-align: center; color: #0f0; font-size: 35px; text-shadow: 0 0 15px #0f0; pointer-events: none; z-index: 10; }
-        #sprint-ui { position: absolute; top: 70px; width: 100%; text-align: center; color: #ff0; font-size: 18px; text-shadow: 0 0 10px #f00; pointer-events: none; z-index: 10; }
+        #sprint-ui { position: absolute; top: 70px; width: 100%; text-align: center; font-size: 18px; text-shadow: 0 0 10px #000; pointer-events: none; z-index: 10; }
+        .ready { color: #0f0; text-shadow: 0 0 10px #0f0; }
+        .waiting { color: #ff0; }
     </style>
 </head>
 <body>
     <div id="ui">PUNTI: <span id="score">0</span></div>
-    <div id="sprint-ui">SPRINT: <span id="sprints">0</span> (Barra SPAZIO)</div>
+    <div id="sprint-ui" class="waiting">PROSSIMO SPRINT: <span id="countdown">20</span>s</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
-const sprintsElement = document.getElementById('sprints');
+const countdownElement = document.getElementById('countdown');
+const sprintContainer = document.getElementById('sprint-ui');
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -29,8 +32,9 @@ const faceImg = new Image();
 faceImg.src = 'fotoufo (1).png'; 
 
 let score = 0;
-let sprints = 0;
-let lastSprintMilestone = 0;
+let sprintReady = false;
+let sprintCooldown = 20; // 20 secondi
+let lastSprintTime = Date.now();
 let gameActive = true;
 let platforms = [];
 let stars = [];
@@ -48,10 +52,9 @@ const player = {
 
 function initGame() {
     score = 0;
-    sprints = 0;
-    lastSprintMilestone = 0;
     scoreElement.innerText = "0";
-    sprintsElement.innerText = "0";
+    lastSprintTime = Date.now();
+    sprintReady = false;
     
     player.x = canvas.width / 2 - player.w/2;
     player.y = canvas.height - 300;
@@ -83,16 +86,23 @@ function addPlatform(yPos) {
 function update() {
     if (!gameActive) return;
 
+    // Gestione Timer Sprint
+    let elapsed = (Date.now() - lastSprintTime) / 1000;
+    let remaining = Math.max(0, sprintCooldown - elapsed);
+    
+    if (remaining <= 0) {
+        sprintReady = true;
+        sprintContainer.className = "ready";
+        sprintContainer.innerHTML = "SPRINT PRONTO! (Barra SPAZIO)";
+    } else {
+        sprintReady = false;
+        sprintContainer.className = "waiting";
+        sprintContainer.innerHTML = "PROSSIMO SPRINT: " + Math.ceil(remaining) + "s";
+    }
+
     player.vy += player.gravity;
     player.y += player.vy;
     player.x += player.vx;
-
-    // Check sblocco Sprint ogni 50 punti
-    if (score >= lastSprintMilestone + 50) {
-        sprints++;
-        lastSprintMilestone += 50;
-        sprintsElement.innerText = sprints;
-    }
 
     if (player.x + player.w < 0) player.x = canvas.width;
     if (player.x > canvas.width) player.x = -player.w;
@@ -152,16 +162,12 @@ function draw() {
     stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
 
     platforms.forEach(p => {
-        // ALIENO DENTRO L'UFO
-        ctx.fillStyle = "#32CD32"; // Verde alieno
-        ctx.beginPath();
-        ctx.arc(p.x + p.w/2, p.y - 5, 12, 0, Math.PI * 2);
-        ctx.fill();
-        // Occhi alieno
+        // Alieno
+        ctx.fillStyle = "#32CD32";
+        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y - 5, 12, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = "white";
         ctx.beginPath(); ctx.arc(p.x + p.w/2 - 5, p.y - 8, 3, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(p.x + p.w/2 + 5, p.y - 8, 3, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y - 12, 3, 0, Math.PI*2); ctx.fill(); // Terzo occhio
 
         // Cupola UFO
         ctx.fillStyle = "rgba(0, 255, 255, 0.25)";
@@ -176,11 +182,12 @@ function draw() {
         }
     });
 
-    ctx.fillStyle = '#cc0000';
+    // Personaggio
+    ctx.fillStyle = '#cc0000'; // Mantello
     ctx.fillRect(player.x + 10, player.y + 65, player.w - 20, 65);
-    ctx.fillStyle = '#0077ff';
+    ctx.fillStyle = '#0077ff'; // Corpo
     ctx.fillRect(player.x + 20, player.y + 60, 50, 75);
-    ctx.fillStyle = '#cc0000';
+    ctx.fillStyle = '#cc0000'; // Scarpe
     ctx.fillRect(player.x + 20, player.y + 135, 20, 15);
     ctx.fillRect(player.x + 50, player.y + 135, 20, 15);
     
@@ -201,11 +208,10 @@ function gameLoop() {
 window.onkeydown = (e) => {
     if(e.key === "ArrowLeft") player.vx = -player.speed;
     if(e.key === "ArrowRight") player.vx = player.speed;
-    // Tasto Spazio per lo Sprint
-    if(e.code === "Space" && sprints > 0 && gameActive) {
-        player.vy = -35; // Super spinta verso l'alto
-        sprints--;
-        sprintsElement.innerText = sprints;
+    if(e.code === "Space" && sprintReady && gameActive) {
+        player.vy = -35; 
+        lastSprintTime = Date.now();
+        sprintReady = false;
     }
 };
 window.onkeyup = (e) => {
