@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UFO Jump: Chrono Sprint</title>
+    <title>UFO Jump: Mobile Fixed</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #020205; font-family: 'Arial Black', sans-serif; }
-        canvas { display: block; touch-action: none; cursor: pointer; }
-        #ui { position: absolute; top: 20px; width: 100%; text-align: center; color: #0f0; font-size: 35px; text-shadow: 0 0 15px #0f0; pointer-events: none; z-index: 10; }
-        #sprint-ui { position: absolute; top: 70px; width: 100%; text-align: center; font-size: 18px; text-shadow: 0 0 10px #000; pointer-events: none; z-index: 10; }
-        .ready { color: #0f0; text-shadow: 0 0 10px #0f0; }
+        body { margin: 0; overflow: hidden; background: #020205; font-family: 'Arial Black', sans-serif; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        canvas { display: block; touch-action: none; }
+        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: #0f0; font-size: 24px; text-shadow: 0 0 10px #0f0; pointer-events: none; z-index: 10; }
+        #sprint-ui { position: absolute; top: 45px; width: 100%; text-align: center; font-size: 14px; pointer-events: none; z-index: 10; }
+        .ready { color: #0f0; animation: blink 0.5s infinite; }
         .waiting { color: #ff0; }
+        @keyframes blink { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
     <div id="ui">PUNTI: <span id="score">0</span></div>
-    <div id="sprint-ui" class="waiting">PROSSIMO SPRINT: <span id="countdown">20</span>s</div>
+    <div id="sprint-ui" class="waiting">SPRINT: <span id="countdown">20</span>s</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
-const countdownElement = document.getElementById('countdown');
 const sprintContainer = document.getElementById('sprint-ui');
 
 canvas.width = window.innerWidth;
@@ -33,67 +33,53 @@ faceImg.src = 'fotoufo (1).png';
 
 let score = 0;
 let sprintReady = false;
-let sprintCooldown = 20; // 20 secondi
+let sprintCooldown = 20;
 let lastSprintTime = Date.now();
 let gameActive = true;
 let platforms = [];
 let stars = [];
 
-for(let i=0; i<120; i++) {
-    stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2.5 });
+for(let i=0; i<80; i++) {
+    stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2 });
 }
 
 const player = {
-    x: 0, y: 0, 
-    w: 90, h: 140, 
-    vy: 0, gravity: 0.45, jump: -16,
-    vx: 0, speed: 10
+    x: 0, y: 0, w: 70, h: 110, 
+    vy: 0, gravity: 0.45, jump: -15,
+    vx: 0, speed: 8
 };
 
 function initGame() {
     score = 0;
     scoreElement.innerText = "0";
     lastSprintTime = Date.now();
-    sprintReady = false;
-    
     player.x = canvas.width / 2 - player.w/2;
     player.y = canvas.height - 300;
     player.vy = 0;
-    
     platforms = [];
-    platforms.push({ 
-        x: canvas.width/2 - 125, 
-        y: canvas.height - 150, 
-        w: 250, h: 45, 
-        speed: 0 
-    });
-    
-    for(let i=1; i<7; i++) {
-        addPlatform(canvas.height - 150 - (i * 180));
-    }
+    platforms.push({ x: canvas.width/2 - 100, y: canvas.height - 150, w: 200, h: 40, speed: 0 });
+    for(let i=1; i<7; i++) addPlatform(canvas.height - 150 - (i * 180));
     gameActive = true;
 }
 
 function addPlatform(yPos) {
     platforms.push({
-        x: Math.random() * (canvas.width - 180),
-        y: yPos,
-        w: 180, h: 45, 
-        speed: (Math.random() - 0.5) * 5 
+        x: Math.random() * (canvas.width - 150),
+        y: yPos, w: 150, h: 40,
+        speed: (Math.random() - 0.5) * 4 
     });
 }
 
 function update() {
     if (!gameActive) return;
 
-    // Gestione Timer Sprint
     let elapsed = (Date.now() - lastSprintTime) / 1000;
     let remaining = Math.max(0, sprintCooldown - elapsed);
     
     if (remaining <= 0) {
         sprintReady = true;
         sprintContainer.className = "ready";
-        sprintContainer.innerHTML = "SPRINT PRONTO! (Barra SPAZIO)";
+        sprintContainer.innerHTML = "SPRINT PRONTO! (TOCCA CON 2 DITA)";
     } else {
         sprintReady = false;
         sprintContainer.className = "waiting";
@@ -107,17 +93,11 @@ function update() {
     if (player.x + player.w < 0) player.x = canvas.width;
     if (player.x > canvas.width) player.x = -player.w;
 
-    if (player.y < canvas.height / 2.5) {
-        let diff = canvas.height / 2.5 - player.y;
-        player.y = canvas.height / 2.5;
+    if (player.y < canvas.height / 3) {
+        let diff = canvas.height / 3 - player.y;
+        player.y = canvas.height / 3;
         score += Math.floor(diff * 0.1);
         scoreElement.innerText = score;
-        
-        stars.forEach(s => {
-            s.y += diff * 0.15;
-            if(s.y > canvas.height) s.y = 0;
-        });
-
         platforms.forEach(p => {
             p.y += diff;
             if (p.y > canvas.height) {
@@ -129,10 +109,9 @@ function update() {
 
     if (player.vy > 0) {
         platforms.forEach(p => {
-            if (player.x + 30 < p.x + p.w && player.x + player.w - 30 > p.x &&
-                player.y + player.h > p.y && player.y + player.h < p.y + p.h + 25) {
+            if (player.x + 20 < p.x + p.w && player.x + player.w - 20 > p.x &&
+                player.y + player.h > p.y && player.y + player.h < p.y + p.h + 20) {
                 player.vy = player.jump;
-                player.y = p.y - player.h;
             }
         });
     }
@@ -142,87 +121,68 @@ function update() {
         if(p.x < 0 || p.x > canvas.width - p.w) p.speed *= -1;
     });
 
-    if (player.y > canvas.height + 150) {
+    if (player.y > canvas.height + 100) {
         gameActive = false;
-        setTimeout(() => {
-            if(confirm("CADUTO NEL VUOTO! Punti: " + score + "\nRitenta l'allunaggio?")) initGame();
-        }, 100);
+        if(confirm("CADUTO! Punti: " + score + "\nRiunizia?")) initGame();
     }
 }
 
 function draw() {
-    let grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    grd.addColorStop(0, "#000022");
-    grd.addColorStop(0.5, "#050015");
-    grd.addColorStop(1, "#000000");
-    ctx.fillStyle = grd;
+    ctx.fillStyle = "#000015";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
     ctx.fillStyle = "white";
     stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
 
     platforms.forEach(p => {
-        // Alieno
-        ctx.fillStyle = "#32CD32";
-        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y - 5, 12, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "white";
-        ctx.beginPath(); ctx.arc(p.x + p.w/2 - 5, p.y - 8, 3, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(p.x + p.w/2 + 5, p.y - 8, 3, 0, Math.PI*2); ctx.fill();
-
-        // Cupola UFO
-        ctx.fillStyle = "rgba(0, 255, 255, 0.25)";
-        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + 5, p.w/4, Math.PI, 0); ctx.fill();
-        
-        ctx.fillStyle = '#888';
-        ctx.beginPath(); ctx.ellipse(p.x + p.w/2, p.y + 20, p.w/2, 22, 0, 0, Math.PI * 2); ctx.fill();
-        
-        ctx.fillStyle = (Math.floor(Date.now()/300) % 2 == 0) ? '#0f0' : '#0a0';
-        for(let i=1; i<=4; i++) {
-            ctx.beginPath(); ctx.arc(p.x + (p.w/5)*i, p.y + 20, 7, 0, Math.PI*2); ctx.fill();
-        }
+        ctx.fillStyle = "#32CD32"; // Alieno
+        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y - 5, 8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#888"; // Disco
+        ctx.beginPath(); ctx.ellipse(p.x + p.w/2, p.y + 15, p.w/2, 15, 0, 0, Math.PI*2); ctx.fill();
     });
 
-    // Personaggio
     ctx.fillStyle = '#cc0000'; // Mantello
-    ctx.fillRect(player.x + 10, player.y + 65, player.w - 20, 65);
+    ctx.fillRect(player.x + 10, player.y + 50, player.w - 20, 50);
     ctx.fillStyle = '#0077ff'; // Corpo
-    ctx.fillRect(player.x + 20, player.y + 60, 50, 75);
-    ctx.fillStyle = '#cc0000'; // Scarpe
-    ctx.fillRect(player.x + 20, player.y + 135, 20, 15);
-    ctx.fillRect(player.x + 50, player.y + 135, 20, 15);
+    ctx.fillRect(player.x + 15, player.y + 45, 40, 60);
     
     if (faceImg.complete && faceImg.naturalWidth !== 0) {
-        ctx.drawImage(faceImg, player.x, player.y, 90, 90);
+        ctx.drawImage(faceImg, player.x, player.y, 70, 70);
     } else {
         ctx.fillStyle = '#f1c40f';
-        ctx.beginPath(); ctx.arc(player.x + 45, player.y + 45, 42, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(player.x + 35, player.y + 35, 30, 0, Math.PI*2); ctx.fill();
     }
 }
 
-function gameLoop() {
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
+function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 
+// CONTROLLI TOUCH AGGIORNATI
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    // Se tocchi con due dita e lo sprint è pronto
+    if (e.touches.length >= 2 && sprintReady) {
+        player.vy = -35;
+        lastSprintTime = Date.now();
+        return;
+    }
+    const touchX = e.touches[0].clientX;
+    // Divide lo schermo a metà esatta
+    player.vx = (touchX < canvas.width / 2) ? -player.speed : player.speed;
+}, {passive: false});
+
+canvas.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) player.vx = 0;
+});
+
+// CONTROLLI TASTIERA PC
 window.onkeydown = (e) => {
     if(e.key === "ArrowLeft") player.vx = -player.speed;
     if(e.key === "ArrowRight") player.vx = player.speed;
-    if(e.code === "Space" && sprintReady && gameActive) {
-        player.vy = -35; 
+    if(e.code === "Space" && sprintReady) {
+        player.vy = -35;
         lastSprintTime = Date.now();
-        sprintReady = false;
     }
 };
-window.onkeyup = (e) => {
-    if(e.key === "ArrowLeft" || e.key === "ArrowRight") player.vx = 0;
-};
-
-canvas.onmousedown = canvas.ontouchstart = (e) => {
-    const x = e.touches ? e.touches.clientX : e.clientX;
-    player.vx = (x < canvas.width / 2) ? -player.speed : player.speed;
-};
-canvas.onmouseup = canvas.ontouchend = () => player.vx = 0;
+window.onkeyup = () => player.vx = 0;
 
 initGame();
 gameLoop();
