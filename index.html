@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UFO Jump: Space Edition</title>
+    <title>UFO Jump: Space XL</title>
     <style>
         body { margin: 0; overflow: hidden; background: #020205; font-family: 'Arial Black', sans-serif; }
         canvas { display: block; touch-action: none; cursor: pointer; }
         #ui { position: absolute; top: 20px; width: 100%; text-align: center; color: #0f0; font-size: 35px; text-shadow: 0 0 15px #0f0; pointer-events: none; z-index: 10; }
-        #inst { position: absolute; bottom: 20px; width: 100%; text-align: center; color: white; font-size: 16px; opacity: 0.8; pointer-events: none; }
     </style>
 </head>
 <body>
     <div id="ui">PUNTI: <span id="score">0</span></div>
-    <div id="inst">Frecce o Click ai lati per saltare nello spazio</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -24,7 +22,6 @@ const scoreElement = document.getElementById('score');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// --- RIFERIMENTO AL FILE LOCALE ---
 const faceImg = new Image();
 faceImg.src = 'fotoufo (1).png'; 
 
@@ -33,42 +30,49 @@ let gameActive = true;
 let platforms = [];
 let stars = [];
 
-// Creazione stelle per lo sfondo
-for(let i=0; i<100; i++) {
-    stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2 });
+// Genera stelle fisse nello sfondo
+for(let i=0; i<120; i++) {
+    stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2.5 });
 }
 
 const player = {
     x: 0, y: 0, 
-    w: 90, h: 140, // Dimensioni aumentate
-    vy: 0, gravity: 0.4, jump: -15,
-    vx: 0, speed: 9
+    w: 90, h: 140, 
+    vy: 0, gravity: 0.45, jump: -16,
+    vx: 0, speed: 10
 };
 
 function initGame() {
     score = 0;
     scoreElement.innerText = "0";
+    
+    // Posizione giocatore centrata e sollevata
     player.x = canvas.width / 2 - player.w/2;
-    player.y = canvas.height - 250;
+    player.y = canvas.height - 300;
     player.vy = 0;
-    player.vx = 0;
     
     platforms = [];
-    // Piattaforma di partenza più grande
-    platforms.push({ x: canvas.width/2 - 100, y: canvas.height - 110, w: 200, h: 40 });
+    // PIATTAFORMA DI PARTENZA SICURA (Sotto i piedi)
+    platforms.push({ 
+        x: canvas.width/2 - 125, 
+        y: canvas.height - 150, 
+        w: 250, h: 45, 
+        speed: 0 
+    });
     
-    for(let i=1; i<8; i++) {
-        addPlatform(canvas.height - (i * 160));
+    // Genera gli altri UFO verso l'alto
+    for(let i=1; i<7; i++) {
+        addPlatform(canvas.height - 150 - (i * 180));
     }
     gameActive = true;
 }
 
 function addPlatform(yPos) {
     platforms.push({
-        x: Math.random() * (canvas.width - 150),
+        x: Math.random() * (canvas.width - 180),
         y: yPos,
-        w: 150, h: 40, // UFO più grandi
-        speed: (Math.random() - 0.5) * 4 
+        w: 180, h: 45, 
+        speed: (Math.random() - 0.5) * 5 
     });
 }
 
@@ -82,15 +86,15 @@ function update() {
     if (player.x + player.w < 0) player.x = canvas.width;
     if (player.x > canvas.width) player.x = -player.w;
 
-    if (player.y < canvas.height / 2) {
-        let diff = canvas.height / 2 - player.y;
-        player.y = canvas.height / 2;
+    // Telecamera (scorrimento)
+    if (player.y < canvas.height / 2.5) {
+        let diff = canvas.height / 2.5 - player.y;
+        player.y = canvas.height / 2.5;
         score += Math.floor(diff * 0.1);
         scoreElement.innerText = score;
         
-        // Muovi stelle (parallasse)
         stars.forEach(s => {
-            s.y += diff * 0.2;
+            s.y += diff * 0.15;
             if(s.y > canvas.height) s.y = 0;
         });
 
@@ -98,15 +102,16 @@ function update() {
             p.y += diff;
             if (p.y > canvas.height) {
                 platforms.shift();
-                addPlatform(0);
+                addPlatform(platforms[platforms.length-1].y - 180);
             }
         });
     }
 
+    // Collisione (Solo in discesa)
     if (player.vy > 0) {
         platforms.forEach(p => {
-            if (player.x + 25 < p.x + p.w && player.x + player.w - 25 > p.x &&
-                player.y + player.h > p.y && player.y + player.h < p.y + p.h + 20) {
+            if (player.x + 30 < p.x + p.w && player.x + player.w - 30 > p.x &&
+                player.y + player.h > p.y && player.y + player.h < p.y + p.h + 25) {
                 player.vy = player.jump;
                 player.y = p.y - player.h;
             }
@@ -114,25 +119,24 @@ function update() {
     }
 
     platforms.forEach(p => {
-        if(p.speed) {
-            p.x += p.speed;
-            if(p.x < 0 || p.x > canvas.width - p.w) p.speed *= -1;
-        }
+        p.x += p.speed;
+        if(p.x < 0 || p.x > canvas.width - p.w) p.speed *= -1;
     });
 
-    if (player.y > canvas.height + 100) {
+    if (player.y > canvas.height + 150) {
         gameActive = false;
         setTimeout(() => {
-            if(confirm("MISSIONE FALLITA! Punteggio: " + score + "\nVuoi tornare in orbita?")) initGame();
+            if(confirm("CADUTO NEL VUOTO! Punti: " + score + "\nRitenta l'allunaggio?")) initGame();
         }, 100);
     }
 }
 
 function draw() {
-    // Sfondo Spaziale Gradiente
+    // Sfondo Spaziale Profondo
     let grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    grd.addColorStop(0, "#0b0b2e");
-    grd.addColorStop(1, "#020205");
+    grd.addColorStop(0, "#000022");
+    grd.addColorStop(0.5, "#050015");
+    grd.addColorStop(1, "#000000");
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
@@ -140,50 +144,39 @@ function draw() {
     ctx.fillStyle = "white";
     stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
 
-    // Disegna UFO Giganti
+    // Disegna UFO GIGANTI
     platforms.forEach(p => {
-        // Cupola
-        ctx.fillStyle = "rgba(0, 255, 255, 0.3)";
-        ctx.beginPath();
-        ctx.arc(p.x + p.w/2, p.y, p.w/4, Math.PI, 0);
-        ctx.fill();
-        // Disco
-        ctx.fillStyle = '#666';
-        ctx.beginPath();
-        ctx.ellipse(p.x + p.w/2, p.y + 15, p.w/2, 20, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Luci pulsanti
-        ctx.fillStyle = (Date.now() % 500 > 250) ? '#0f0' : '#050'; 
-        for(let i=0; i<3; i++) {
-            ctx.beginPath();
-            ctx.arc(p.x + (p.w/4)*(i+1), p.y + 15, 6, 0, Math.PI*2);
-            ctx.fill();
+        ctx.fillStyle = "rgba(0, 255, 255, 0.2)"; // Cupola
+        ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + 5, p.w/4, Math.PI, 0); ctx.fill();
+        
+        ctx.fillStyle = '#888'; // Disco metallico
+        ctx.beginPath(); ctx.ellipse(p.x + p.w/2, p.y + 20, p.w/2, 22, 0, 0, Math.PI * 2); ctx.fill();
+        
+        // Luci Alieni
+        ctx.fillStyle = (Math.floor(Date.now()/300) % 2 == 0) ? '#0f0' : '#0a0';
+        for(let i=1; i<=4; i++) {
+            ctx.beginPath(); ctx.arc(p.x + (p.w/5)*i, p.y + 20, 7, 0, Math.PI*2); ctx.fill();
         }
     });
 
-    // VESTITO DIVERTENTE XL
+    // PERSONAGGIO XL
     // Mantello
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(player.x + 10, player.y + 60, player.w - 20, 60);
-    // Tutina
-    ctx.fillStyle = '#00aaff';
-    ctx.fillRect(player.x + 20, player.y + 55, 50, 70);
-    // Stivali
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(player.x + 20, player.y + 125, 15, 15);
-    ctx.fillRect(player.x + 55, player.y + 125, 15, 15);
+    ctx.fillStyle = '#cc0000';
+    ctx.fillRect(player.x + 10, player.y + 65, player.w - 20, 65);
+    // Corpo
+    ctx.fillStyle = '#0077ff';
+    ctx.fillRect(player.x + 20, player.y + 60, 50, 75);
+    // Scarponi
+    ctx.fillStyle = '#cc0000';
+    ctx.fillRect(player.x + 20, player.y + 135, 20, 15);
+    ctx.fillRect(player.x + 50, player.y + 135, 20, 15);
     
-    // FACCIA XL
+    // FACCIA
     if (faceImg.complete && faceImg.naturalWidth !== 0) {
         ctx.drawImage(faceImg, player.x, player.y, 90, 90);
     } else {
         ctx.fillStyle = '#f1c40f';
-        ctx.beginPath();
-        ctx.arc(player.x + 45, player.y + 45, 40, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#000';
-        ctx.fillRect(player.x + 30, player.y + 35, 8, 8);
-        ctx.fillRect(player.x + 55, player.y + 35, 8, 8);
+        ctx.beginPath(); ctx.arc(player.x + 45, player.y + 45, 42, 0, Math.PI * 2); ctx.fill();
     }
 }
 
@@ -193,6 +186,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+// Controlli
 window.onkeydown = (e) => {
     if(e.key === "ArrowLeft") player.vx = -player.speed;
     if(e.key === "ArrowRight") player.vx = player.speed;
