@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UFO Jump: Full Face Edition</title>
+    <title>UFO Jump: Vector Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background: #020205; font-family: 'Arial Black', sans-serif; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         canvas { display: block; touch-action: none; }
@@ -26,13 +26,6 @@ const sprintContainer = document.getElementById('sprint-ui');
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-
-// --- CARICAMENTO FOTO ---
-const faceImg = new Image();
-faceImg.src = 'fotoufo (1).png'; 
-
-const alienImg = new Image();
-alienImg.src = 'fotoalieno.png.png'; 
 
 let score = 0;
 let sprintReady = false;
@@ -75,7 +68,6 @@ function addPlatform(yPos) {
 
 function update() {
     if (!gameActive) return;
-
     let elapsed = (Date.now() - lastSprintTime) / 1000;
     let remaining = Math.max(0, sprintCooldown - elapsed);
     
@@ -139,21 +131,18 @@ function draw() {
     ctx.fillStyle = "white"; stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
 
     platforms.forEach(p => {
-        // DISEGNA FACCIA ALIENO (Spostata più su: y - 55 invece di y - 35)
-        if (alienImg.complete && alienImg.naturalWidth !== 0) {
-            ctx.drawImage(alienImg, p.x + p.w/2 - 30, p.y - 55, 60, 60);
-        } else {
-            ctx.fillStyle = "#32CD32"; 
-            ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y - 25, 15, 0, Math.PI * 2); ctx.fill();
-        }
+        // Alieno
+        ctx.fillStyle = "#32CD32";
+        ctx.beginPath(); ctx.ellipse(p.x + p.w/2, p.y - 35, 15, 18, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "black";
+        ctx.beginPath(); ctx.ellipse(p.x + p.w/2 - 6, p.y - 38, 4, 6, 0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(p.x + p.w/2 + 6, p.y - 38, 4, 6, -0.2, 0, Math.PI * 2); ctx.fill();
 
-        // Cupola UFO
+        // UFO
         ctx.fillStyle = "rgba(0, 255, 255, 0.2)";
         ctx.beginPath(); ctx.arc(p.x + p.w/2, p.y + 5, p.w/4, Math.PI, 0); ctx.fill();
-        
         ctx.fillStyle = '#888'; 
         ctx.beginPath(); ctx.ellipse(p.x + p.w/2, p.y + 20, p.w/2, 22, 0, 0, Math.PI * 2); ctx.fill();
-        
         ctx.fillStyle = (Math.floor(Date.now()/300) % 2 == 0) ? '#0f0' : '#0a0';
         for(let i=1; i<=4; i++) {
             ctx.beginPath(); ctx.arc(p.x + (p.w/5)*i, p.y + 20, 7, 0, Math.PI*2); ctx.fill();
@@ -161,21 +150,16 @@ function draw() {
     });
 
     // Personaggio
-    ctx.fillStyle = '#cc0000'; ctx.fillRect(player.x + 10, player.y + 60, player.w - 20, 60); 
-    ctx.fillStyle = '#0077ff'; ctx.fillRect(player.x + 18, player.y + 55, 44, 65); 
-    ctx.fillStyle = '#cc0000'; ctx.fillRect(player.x + 18, player.y + 120, 18, 12); ctx.fillRect(player.x + 44, player.y + 120, 18, 12); 
-    
-    if (faceImg.complete && faceImg.naturalWidth !== 0) {
-        ctx.drawImage(faceImg, player.x, player.y, 80, 80);
-    } else {
-        ctx.fillStyle = '#f1c40f';
-        ctx.beginPath(); ctx.arc(player.x + 40, player.y + 40, 38, 0, Math.PI * 2); ctx.fill();
-    }
+    ctx.fillStyle = '#f1c40f';
+    ctx.beginPath(); ctx.arc(player.x + 40, player.y + 35, 30, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#333'; ctx.fillRect(player.x + 25, player.y + 25, 30, 15);
+    ctx.fillStyle = '#cc0000'; ctx.fillRect(player.x + 15, player.y + 65, 50, 50); 
+    ctx.fillStyle = '#0077ff'; ctx.fillRect(player.x + 10, player.y + 70, 10, 35); 
+    ctx.fillStyle = '#cc0000'; ctx.fillRect(player.x + 20, player.y + 115, 15, 10); ctx.fillRect(player.x + 45, player.y + 115, 15, 10);
 }
 
 function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
 
-// CONTROLLI TOUCH
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     if (e.touches.length >= 2 && sprintReady) {
@@ -187,7 +171,6 @@ canvas.addEventListener('touchstart', (e) => {
 
 canvas.addEventListener('touchend', (e) => { if (e.touches.length === 0) player.vx = 0; });
 
-// CONTROLLI PC
 window.onkeydown = (e) => {
     if(e.key === "ArrowLeft") player.vx = -player.speed;
     if(e.key === "ArrowRight") player.vx = player.speed;
