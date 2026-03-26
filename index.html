@@ -8,6 +8,19 @@
         body { margin: 0; overflow: hidden; background: #020205; font-family: 'Arial Black', sans-serif; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         canvas { display: block; touch-action: none; }
         #ui { position: absolute; top: 15px; width: 100%; text-align: center; color: #0f0; font-size: 28px; text-shadow: 0 0 10px #0f0; pointer-events: none; z-index: 10; }
+        #credits {
+            position: absolute;       
+            bottom: 15px;             
+            width: 100%;             
+            text-align: center;      
+            color: #0f0;              
+            font-size: 14px;         
+            font-family: sans-serif;  
+            text-shadow: 0 0 5px #0f0, 0 0 10px #0f0;    
+            pointer-events: none;     
+            z-index: 10;              
+            opacity: 0.8;             
+        }
         #sprint-ui { position: absolute; top: 55px; width: 100%; text-align: center; font-size: 16px; pointer-events: none; z-index: 10; font-weight: bold; }
         .ready { color: #0f0; text-shadow: 0 0 8px #0f0; }
         .waiting { color: #ff0; }
@@ -16,6 +29,7 @@
 <body>
     <div id="ui">PUNTI: <span id="score">0</span></div>
     <div id="sprint-ui" class="waiting">SPRINT: <span id="countdown">20</span>s</div>
+    <div id="credits"> Creato da CASTELLI CELEGHIN SILVERI</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
